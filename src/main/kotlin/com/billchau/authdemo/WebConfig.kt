@@ -1,0 +1,17 @@
+package com.billchau.authdemo
+
+import org.springframework.context.annotation.Configuration
+import org.springframework.web.servlet.config.annotation.CorsRegistry
+import org.springframework.web.servlet.config.annotation.EnableWebMvc
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+
+@Configuration
+@EnableWebMvc
+class WebConfig: WebMvcConfigurer {
+    override fun addCorsMappings(registry: CorsRegistry) {
+        // 3000 for react, 8080 for vuejs, 4200 for angular
+        registry.addMapping("/**")
+            .allowedOrigins("http://localhost:3000", "http://localhost:8080", "http://localhost:4200")
+            .allowCredentials(true)
+    }
+}
