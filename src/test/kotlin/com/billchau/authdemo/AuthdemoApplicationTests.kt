@@ -1,4 +1,4 @@
-package com.billchau.authdemo.authdemo
+package com.billchau.authdemo
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest

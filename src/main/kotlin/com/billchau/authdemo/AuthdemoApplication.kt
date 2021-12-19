@@ -1,4 +1,4 @@
-package com.billchau.authdemo.authdemo
+package com.billchau.authdemo
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
