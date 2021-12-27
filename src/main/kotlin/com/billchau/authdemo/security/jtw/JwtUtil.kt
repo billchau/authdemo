@@ -20,15 +20,27 @@ class JwtUtil {
     @Value("\${jwtproperties.jwtExpirationMs}")
     private var jwtExpirationMs = 0
 
-    fun generateJwtToken(authentication: Authentication): String {
-        val userPrincipal: UserDetailsImpl = authentication.principal as UserDetailsImpl
-        return Jwts.builder()
-            .setSubject(userPrincipal.username)
+    //version 1 generateJwtToken
+//    fun generateJwtToken(authentication: Authentication): String {
+//        val userPrincipal: UserDetailsImpl = authentication.principal as UserDetailsImpl
+//        return Jwts.builder()
+//            .setSubject(userPrincipal.username)
+//            .setIssuedAt(Date())
+//            .setExpiration(Date(Date().time + jwtExpirationMs))
+//            .signWith(SignatureAlgorithm.HS512, jwtSecret)
+//            .compact();
+//    }
+
+    // version 2 generateJwtToken
+    fun generateJwtToken(userDetailsImpl: UserDetailsImpl): String = generateTokenFromUsername(userDetailsImpl.username)
+
+    fun generateTokenFromUsername(username: String): String =
+        Jwts.builder()
+            .setSubject(username)
             .setIssuedAt(Date())
             .setExpiration(Date(Date().time + jwtExpirationMs))
             .signWith(SignatureAlgorithm.HS512, jwtSecret)
-            .compact();
-    }
+            .compact()
 
     fun getUserNameFromJwtToken(token: String): String =
         Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).body.subject

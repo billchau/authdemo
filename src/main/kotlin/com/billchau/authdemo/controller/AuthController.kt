@@ -1,15 +1,20 @@
 package com.billchau.authdemo.controller
 
+import com.billchau.authdemo.exception.TokenRefreshException
 import com.billchau.authdemo.model.EnumRole
+import com.billchau.authdemo.model.RefreshToken
 import com.billchau.authdemo.model.Role
 import com.billchau.authdemo.model.User
 import com.billchau.authdemo.payload.request.LoginRequest
 import com.billchau.authdemo.payload.request.SignupRequest
+import com.billchau.authdemo.payload.request.TokenRefreshRequest
 import com.billchau.authdemo.payload.response.JwtResponse
 import com.billchau.authdemo.payload.response.MessageResponse
+import com.billchau.authdemo.payload.response.TokenRefreshResponse
 import com.billchau.authdemo.repository.RoleRepository
 import com.billchau.authdemo.repository.UserRepository
 import com.billchau.authdemo.security.jtw.JwtUtil
+import com.billchau.authdemo.security.service.RefreshTokenService
 import com.billchau.authdemo.security.service.UserDetailsImpl
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
@@ -28,6 +33,7 @@ class AuthController(
     private val authenticationManager: AuthenticationManager,
     private val userRepository: UserRepository,
     private val roleRepository: RoleRepository,
+    private val refreshTokenService: RefreshTokenService,
     private val encoder: PasswordEncoder,
     private val jwtUtil: JwtUtil
 ) {
@@ -35,23 +41,36 @@ class AuthController(
     fun authenticateUser(@Valid @RequestBody loginRequest: LoginRequest): ResponseEntity<Any> {
         val token = UsernamePasswordAuthenticationToken(loginRequest.username, loginRequest.password)
         val authentication = authenticationManager.authenticate(token)
-        print(authentication)
         SecurityContextHolder.getContext().authentication = authentication
-        val jwt = jwtUtil.generateJwtToken(authentication)
-        print(jwt)
         val userDetails = authentication.principal as UserDetailsImpl
+        val jwt = jwtUtil.generateJwtToken(userDetails)
+        val refreshToken = refreshTokenService.createRefreshToken(userDetails.id)
+
         val roles = userDetails.authorities.stream()
             .map { item -> item.authority }
             .collect(Collectors.toList())
         return ResponseEntity.ok(
             JwtResponse(
                 accessToken = jwt,
+                refreshToken = refreshToken.token,
                 id = userDetails.id,
                 username = userDetails.username,
                 email = userDetails.email,
                 roles = roles
             )
         )
+    }
+
+    @PostMapping("/refreshtoken")
+    fun refreshToken(@Valid @RequestBody request: TokenRefreshRequest): ResponseEntity<Any> {
+        val requestRefreshToken = request.refreshToken
+        return refreshTokenService.findByToken(requestRefreshToken)
+            ?.let(refreshTokenService::verifyExpiration)
+            ?.let(RefreshToken::user)
+            ?.let {
+            val token = jwtUtil.generateTokenFromUsername(it.username)
+            return ResponseEntity.ok(TokenRefreshResponse(token, requestRefreshToken))
+        } ?: throw TokenRefreshException(requestRefreshToken, "Refresh token is not in database!")
     }
 
     @PostMapping("/signup")
@@ -100,60 +119,4 @@ class AuthController(
 
         return ResponseEntity.ok( MessageResponse("User registered successfully!"));
     }
-//
-//    @PostMapping("register")
-//    fun register(@RequestBody body: RegisterDTO): ResponseEntity<User> {
-//        val user = User()
-//        user.name = body.name
-//        user.password = body.password
-//        user.email = body.email
-//        return ResponseEntity.ok(userService.save(user))
-//    }
-//
-//    @PostMapping("login")
-//    fun  login(@RequestBody body: LoginDTO, response: HttpServletResponse): ResponseEntity<Any> {
-//        val user = userService.findByEmail(body.email)
-//            ?: return ResponseEntity.badRequest().body(GeneralException("User not found"))
-//        if (!user.comparePassword(body.password)) {
-//            return ResponseEntity.badRequest().body(GeneralException("Invalid username / password"))
-//        }
-//
-//        val issuer = user.id.toString()
-//        val secret = "secret"
-//        val jwt = Jwts.builder()
-//            .setIssuer(issuer)
-//            .setExpiration(Date(System.currentTimeMillis() + 60 * 60 * 1000)) // 1 hour
-//            .signWith(SignatureAlgorithm.HS256, secret).compact()
-//
-//        // save the jwt nto cookie
-//        val cookie = Cookie("jwt", jwt)
-//        cookie.isHttpOnly = true
-//        response.addCookie(cookie)
-//
-//        return ResponseEntity.ok("success")
-//    }
-//
-//    @GetMapping("user")
-//    fun user(@CookieValue("jwt") jwt: String?): ResponseEntity<Any> {
-//        try {
-//            if (jwt == null) {
-//                return ResponseEntity.status(401). body(GeneralException("unauthenticated"))
-//            }
-//
-//            val secret = "secret"
-//            val body = Jwts.parser().setSigningKey(secret).parseClaimsJws(jwt).body
-//            return ResponseEntity.ok(userService.getById(body.issuer.toInt()))
-//        } catch (e: Exception) {
-//            return ResponseEntity.status(401). body(GeneralException("unauthenticated"))
-//        }
-//
-//    }
-//
-//    @PostMapping("logout")
-//    fun logout(response: HttpServletResponse): ResponseEntity<Any> {
-//        val cookie = Cookie("jwt", "")
-//        cookie.maxAge = 0
-//        response.addCookie(cookie)
-//        return ResponseEntity.ok("OK")
-//    }
 }
