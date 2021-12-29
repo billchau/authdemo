@@ -19,4 +19,7 @@ class JwtResponse {
         this.roles = roles
     }
 
+    override fun toString(): String {
+        return "$id, $username, $token, $refreshToken"
+    }
 }

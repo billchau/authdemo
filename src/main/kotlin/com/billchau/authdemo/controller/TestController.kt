@@ -3,6 +3,7 @@ package com.billchau.authdemo.controller
 import com.billchau.authdemo.model.EnumRole
 import com.billchau.authdemo.model.Role
 import com.billchau.authdemo.model.User
+import com.billchau.authdemo.payload.response.MessageResponse
 import com.billchau.authdemo.repository.RoleRepository
 import com.billchau.authdemo.repository.UserRepository
 import org.springframework.http.ResponseEntity
@@ -42,19 +43,19 @@ class TestController(
     }
 
     @GetMapping("/all")
-    fun allAccess(): String = "Public Content."
+    fun allAccess(): ResponseEntity<MessageResponse> = ResponseEntity.ok(MessageResponse("Public Content."))
 
 
     @GetMapping("/user")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    fun userAccess(): String = "User Content."
+    fun userAccess(): ResponseEntity<MessageResponse> = ResponseEntity.ok(MessageResponse("User Content."))
 
 
     @GetMapping("/mod")
     @PreAuthorize("hasRole('MODERATOR')")
-    fun moderatorAccess(): String = "Moderator Board."
+    fun moderatorAccess(): ResponseEntity<MessageResponse> = ResponseEntity.ok(MessageResponse("Moderator Board."))
 
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
-    fun adminAccess(): String = "Admin Board."
+    fun adminAccess(): ResponseEntity<MessageResponse> = ResponseEntity.ok(MessageResponse("Admin Board."))
 }
