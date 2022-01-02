@@ -12,6 +12,9 @@ Frontend
 https://github.com/billchau/demo-auth-website
 
 branch:
+
 master: simple JWT token
+
 jwt-advance version: JWT token with refresh logic
+
 oauth2: Work in progress (will be a simple oauth2 and will create a advance version later on)
