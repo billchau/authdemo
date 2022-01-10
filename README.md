@@ -1,7 +1,5 @@
 
-This project targets to demo authentication and authorization
-
-Trying to create the project close to production level as possible
+This project targets to demo authentication and authorizatio
 
 
 ===================================================================
